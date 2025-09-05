@@ -149,7 +149,7 @@ class TodoParser {
 
   // Returns the number of whitespace-characters at beginning of string at line `l`
   #getIndentation(l) {
-    return this.#lines[l].search(/\S/);
+    return this.#lines[l].search(/\S|$/);
   }
 
   // Returns a list of strings that represents all the todos along with there potential children
