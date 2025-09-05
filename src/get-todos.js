@@ -98,7 +98,7 @@ class TodoParser {
 
     let result = false;
 
-    const match = s.match(/^\s*[*+-]\s+\[\[(.*)\]\]$/);
+    const match = s.match(/^\s*[*+-]\s+.*\[\[(.*)\]\]/);
     if (match) {
       const {path, subpath} = parseLinktext(match[1]);
       const file = this.#app.metadataCache.getFirstLinkpathDest(path, '');
