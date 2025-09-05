@@ -128,6 +128,8 @@ export default class RolloverTodosPlugin extends Plugin {
       lines: dnLines,
       withChildren: this.settings.rolloverChildren,
       doneStatusMarkers: this.settings.doneStatusMarkers,
+      doneStatusValues: this.settings.doneStatusValues,
+      app: this.app,
     });
   }
 

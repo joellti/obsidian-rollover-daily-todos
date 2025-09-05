@@ -129,5 +129,19 @@ export default class RolloverSettingTab extends PluginSettingTab {
             this.plugin.saveSettings();
           })
       );
+
+      new Setting(this.containerEl)
+      .setName("Done status vaules")
+      .setDesc(
+        `Values that represent completion in "status" property of task notes. Default is "done". Separate multiple values by ",".`
+      )
+      .addText((text) =>
+        text
+          .setValue(this.plugin.settings.doneStatusValues || "done")
+          .onChange((value) => {
+            this.plugin.settings.doneStatusValues = value;
+            this.plugin.saveSettings();
+          })
+      );
   }
 }

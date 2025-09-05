@@ -1,3 +1,5 @@
+import { parseLinktext, TFile } from "obsidian";
+
 class TodoParser {
   // Support all unordered list bullet symbols as per spec (https://daringfireball.net/projects/markdown/syntax#list)
   bulletSymbols = ["-", "*", "+"];
@@ -5,11 +7,16 @@ class TodoParser {
   // Default completed status markers
   doneStatusMarkers = ["x", "X", "-"];
 
+  // Default completed status values
+  doneStatusValues = [];
+
   // List of strings that include the Markdown content
   #lines;
 
   // Boolean that encodes whether nested items should be rolled over
   #withChildren;
+
+  #app;
 
   // Parse content with segmentation to allow for Unicode grapheme clusters
   #parseIntoChars(content, contentType = "content") {
@@ -29,7 +36,7 @@ class TodoParser {
     }
   }
 
-  constructor(lines, withChildren, doneStatusMarkers) {
+  constructor(lines, withChildren, doneStatusMarkers, doneStatusValues, app) {
     this.#lines = lines;
     this.#withChildren = withChildren;
     if (doneStatusMarkers) {
@@ -38,6 +45,13 @@ class TodoParser {
         "done status markers"
       );
     }
+
+    if (doneStatusValues) {
+      let arr = doneStatusValues.split(',');
+      this.doneStatusValues = arr.map(str => str.trim()).filter(str => str.length > 0);
+    }
+    
+    this.#app = app;
   }
 
   // Returns true if string s is a todo-item
@@ -77,6 +91,28 @@ class TodoParser {
 
     // Return true (is a todo) if it does NOT contain any done markers
     return !hasDoneMarker;
+  }
+
+  // Returns true if s contains link to an open task note
+  #isTaskNote(s) {
+
+    let result = false;
+
+    const match = s.match(/^\s*[*+-]\s+\[\[(.*)\]\]$/);
+    if (match) {
+      const {path, subpath} = parseLinktext(match[1]);
+      const file = this.#app.metadataCache.getFirstLinkpathDest(path, '');
+      if (file instanceof TFile) {
+        const meta = this.#app.metadataCache.getFileCache(file);
+        const status = meta?.frontmatter?.status;
+        const tags = meta?.frontmatter?.tags;
+        if ( tags?.includes("task") && !this.doneStatusValues.includes(status) )
+          result = true;
+      }
+    }
+
+    return result;
+
   }
 
   // Returns true if line after line-number `l` is a nested item
@@ -121,7 +157,7 @@ class TodoParser {
     let todos = [];
     for (let l = 0; l < this.#lines.length; l++) {
       const line = this.#lines[l];
-      if (this.#isTodo(line)) {
+      if (this.#isTodo(line) || this.#isTaskNote(line)) {
         todos.push(line);
         if (this.#withChildren && this.#hasChildren(l)) {
           const cs = this.#getChildren(l);
@@ -139,7 +175,9 @@ export const getTodos = ({
   lines,
   withChildren = false,
   doneStatusMarkers = null,
+  doneStatusValues = null,
+  app = null,
 }) => {
-  const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers);
+  const todoParser = new TodoParser(lines, withChildren, doneStatusMarkers, doneStatusValues, app);
   return todoParser.getTodos();
 };
